@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/DataStruct.dir/main.cpp.o  -o DataStruct 
+/usr/bin/cc -g   CMakeFiles/DataStruct.dir/main.c.o  -o DataStruct 

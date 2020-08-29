@@ -9,7 +9,7 @@
 #include <string.h>
 
 #define SERVER_HOST "127.0.0.1"
-#define SERVER_PORT 9801
+#define SERVER_PORT 9802
 
 void catchError(int error) {
     if (error != 0) {
@@ -63,10 +63,12 @@ int main() {
     clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, &clientAddressLength);
     catchError(error);
 
-    bzero(buffer, 0);
-    n = read(clientSocket, &buffer, sizeof(buffer));
-    strcat(buffer, "shabi\n");
-    write(clientSocket, buffer, sizeof(buffer));
+
+    while (1) {
+        memset(buffer, 0, sizeof(BUFSIZ));
+        n = read(clientSocket, &buffer, sizeof(buffer));
+        write(clientSocket, buffer, sizeof(buffer));
+    }
     close(clientSocket);
     close(serverSocket);
 

@@ -1,4 +1,4 @@
-# Install script for directory: /tmp/tmp.USqkjzwCji
+# Install script for directory: /root/c/TCP
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/tmp/tmp.USqkjzwCji/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/root/c/TCP/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

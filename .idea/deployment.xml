@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="Centos (b357d7dc-4749-4364-aac2-13fc9942c150)" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="Centos (b357d7dc-4749-4364-aac2-13fc9942c150)">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/tmp.USqkjzwCji" local="$PROJECT_DIR$" />
+            <mapping deploy="/root/c/TCP" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
           </excludedPaths>
         </serverdata>
       </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
