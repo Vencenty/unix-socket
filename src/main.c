@@ -4,9 +4,15 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <fcntl.h>
-#include <ctype.h>
+#include <signal.h>
 
 #define SERV_PORT 8888
+
+void child_process_exit(int signo) {
+    while (waitpid(0, NULL, WNOHANG) > 0) {
+        return;
+    }
+}
 
 void catchError(int error) {
     if (error != 0) {
@@ -76,6 +82,7 @@ int main (void) {
             }
         } else {
             close(client_fd);
+            signal(SIGCHLD, child_process_exit);
         }
     }
 }
