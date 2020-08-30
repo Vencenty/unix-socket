@@ -33,6 +33,8 @@ int main (void) {
 
     char buffer[BUFSIZ];
 
+    char client_ip[BUFSIZ];
+
     struct sockaddr_in serv_addr, client_addr;
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -51,6 +53,7 @@ int main (void) {
 
         socklen_t client_socket_len = sizeof(client_addr);
         client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_socket_len);
+        printf("当前客户端IP:%s, 客户端端口号:%d\n", inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)), ntohs(client_addr.sin_port));
 
         if (client_fd < 0) {
             perror("socket Error");
