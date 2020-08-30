@@ -1,3 +1,0 @@
-/root/c/TCP/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/root/c/TCP/cmake-build-debug/CMakeFiles/edit_cache.dir
-/root/c/TCP/cmake-build-debug/CMakeFiles/main.dir

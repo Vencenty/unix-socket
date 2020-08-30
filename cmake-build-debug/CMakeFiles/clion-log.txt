@@ -1,4 +1,0 @@
-/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /root/c/TCP
--- Configuring done
--- Generating done
--- Build files have been written to: /root/c/TCP/cmake-build-debug
