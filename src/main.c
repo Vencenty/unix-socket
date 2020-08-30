@@ -1,82 +1,84 @@
 #include <stdio.h>
-#include <error.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <strings.h>
 #include <string.h>
-#define SERVER_HOST "127.0.0.1"
-#define SERVER_PORT 9802
+#include <fcntl.h>
+#include <ctype.h>
+
+#define SERV_PORT 8888
 
 void catchError(int error) {
     if (error != 0) {
         perror("error:");
-        exit(-1);
     }
 }
 
-int main() {
+int main (void) {
+    int server_fd, client_fd;
 
-    // 创建结构体
-    struct sockaddr_in serverAddress, clientAddress;
-    // 用来保存错误信息
     int error = 0;
-    // 用来保存读取的字节数
-    int n = 0;
-    // 保存服务端socket
-    int serverSocket = 0;
-    // 保存客户端socket
-    int clientSocket = 0;
 
-    socklen_t clientAddressLength;
+    int n = 0;
+
+    int i = 0;
+
+    int pid;
 
     char buffer[BUFSIZ];
 
-    bzero(&serverAddress, sizeof(serverAddress));
-    bzero(&clientAddress, sizeof(clientAddress));
-    bzero(buffer, sizeof(buffer));
+    struct sockaddr_in serv_addr, client_addr;
 
-    // TCP ipv4 socket
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (serverSocket < 1) {
-        puts("create socket error");
-        exit(-1);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERV_PORT);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    error = bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    catchError(error);
+
+    error = listen(server_fd, 3);
+    catchError(error);
+
+    while(1) {
+
+        socklen_t client_socket_len = sizeof(client_addr);
+        client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_socket_len);
+
+        if (client_fd < 0) {
+            perror("socket Error");
+        }
+
+
+        pid = fork();
+
+        if (pid < 0) {
+            perror("fork error!");
+            exit(1);
+        } else if(pid == 0) {
+            close(server_fd);
+            while (1) {
+                n = read(client_fd, buffer, sizeof(buffer));
+                if (n == 0) {
+                    close(client_fd);
+                    return 0;
+                } else if(n == -1) {
+                    perror("read error");
+                    exit(1);
+                }  else {
+                    for(i = 0; i < n; i++) {
+                        buffer[i] = toupper(buffer[i]);
+                    }
+                    write(client_fd, buffer, n);
+                }
+
+            }
+        } else {
+            close(client_fd);
+        }
     }
-
-
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(SERVER_PORT);
-    serverAddress.sin_addr.s_addr = inet_addr(SERVER_HOST);
-
-    // 绑定IP跟端口
-    error = bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
-    catchError(error);
-
-    error = listen(serverSocket, 64);
-    catchError(error);
-
-    clientAddressLength = sizeof(clientAddress);
-
-    clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, &clientAddressLength);
-    catchError(error);
-
-    printf("当前客户端: %d 连接进来了\n",  clientSocket);
-
-
-    while (1) {
-        memset(buffer, 0, sizeof(BUFSIZ));
-        n = read(clientSocket, &buffer, sizeof(buffer));
-
-        printf("客户端发来数据:%s, 长度为:%d\n", buffer, n);
-
-        write(clientSocket, buffer, sizeof(buffer));
-    }
-    close(clientSocket);
-    close(serverSocket);
-
-
 }
+
+
+

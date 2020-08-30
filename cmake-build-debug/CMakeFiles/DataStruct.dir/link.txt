@@ -1,1 +1,0 @@
-/usr/bin/cc -g   CMakeFiles/DataStruct.dir/main.c.o  -o DataStruct 
