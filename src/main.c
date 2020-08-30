@@ -8,7 +8,6 @@
 #include <netinet/in.h>
 #include <strings.h>
 #include <string.h>
-
 #define SERVER_HOST "127.0.0.1"
 #define SERVER_PORT 9802
 
@@ -20,7 +19,6 @@ void catchError(int error) {
 }
 
 int main() {
-
 
     // 创建结构体
     struct sockaddr_in serverAddress, clientAddress;
@@ -72,6 +70,9 @@ int main() {
     while (1) {
         memset(buffer, 0, sizeof(BUFSIZ));
         n = read(clientSocket, &buffer, sizeof(buffer));
+
+        printf("客户端发来数据:%s, 长度为:%d\n", buffer, n);
+
         write(clientSocket, buffer, sizeof(buffer));
     }
     close(clientSocket);

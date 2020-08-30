@@ -3,4 +3,5 @@ project(DataStruct)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(DataStruct main.c)
+add_executable(strcp src/strcp.c)
+add_executable(main src/main.c)
