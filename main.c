@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <error.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -19,6 +20,8 @@ void catchError(int error) {
 }
 
 int main() {
+
+
     // 创建结构体
     struct sockaddr_in serverAddress, clientAddress;
     // 用来保存错误信息
@@ -62,6 +65,8 @@ int main() {
 
     clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, &clientAddressLength);
     catchError(error);
+
+    printf("当前客户端: %d 连接进来了\n",  clientSocket);
 
 
     while (1) {
