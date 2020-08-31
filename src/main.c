@@ -40,10 +40,8 @@ void * swoole_callback(void *arg) {
             printf("client %d is closed\n", ts->client_fd);
             break;
         }
-        for(i = 0; i < n; i++) {
-            write(ts->client_fd, buf, n);
-            write(STDOUT_FILENO, buf, sizeof(buf));
-        }
+        write(ts->client_fd, buf, n);
+        write(STDOUT_FILENO, buf, sizeof(buf));
     }
 
     return (void *)0;
