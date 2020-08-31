@@ -86,7 +86,7 @@ int main (void) {
     error = bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
     catchError(error);
 
-    error = listen(server_fd, 3);
+    error = listen(server_fd, 256);
     catchError(error);
 
     while(1) {
