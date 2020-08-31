@@ -5,8 +5,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <pthread.h>
 
-#define SERV_PORT 8888
+#define SERV_PORT 888
+#define MAXLINE 1024
 
 void child_process_exit(int signo) {
     while (waitpid(0, NULL, WNOHANG) > 0) {
@@ -19,8 +21,42 @@ void catchError(int error) {
         perror("error:");
     }
 }
+struct s_info {
+    struct sockaddr_in client_addr;
+    int client_fd;
+};
+
+void * swoole_callback(void *arg) {
+    int n, i;
+    struct s_info *ts = (struct s_info *)arg;
+
+    char buf[MAXLINE];
+    char str[INET_ADDRSTRLEN];
+
+    while (1) {
+        buf[0] = 0;
+        n = read(ts->client_fd,buf,MAXLINE);
+        if (n == 0) {
+            printf("client %d is closed\n", ts->client_fd);
+            break;
+        }
+        for(i = 0; i < n; i++) {
+            write(ts->client_fd, buf, n);
+            write(STDOUT_FILENO, buf, sizeof(buf));
+        }
+    }
+
+    return (void *)0;
+}
+
+
+
+
 
 int main (void) {
+
+    struct s_info *s;
+
     int server_fd, client_fd;
 
     int error = 0;
@@ -37,6 +73,10 @@ int main (void) {
 
     struct sockaddr_in serv_addr, client_addr;
 
+    struct s_info ts[256];
+
+    pthread_t tid;
+
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     serv_addr.sin_family = AF_INET;
@@ -52,41 +92,22 @@ int main (void) {
     while(1) {
 
         socklen_t client_socket_len = sizeof(client_addr);
-        client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_socket_len);
-        printf("当前客户端IP:%s, 客户端端口号:%d\n", inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)), ntohs(client_addr.sin_port));
+        client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &client_socket_len);
+        printf("当前客户端IP:%s, 客户端端口号:%d\n",
+               inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)),
+               ntohs(client_addr.sin_port));
 
         if (client_fd < 0) {
             perror("socket Error");
         }
 
+        ts[i].client_fd = client_fd;
+        ts[i].client_addr = client_addr;
 
-        pid = fork();
-
-        if (pid < 0) {
-            perror("fork error!");
-            exit(1);
-        } else if(pid == 0) {
-            close(server_fd);
-            while (1) {
-                n = read(client_fd, buffer, sizeof(buffer));
-                if (n == 0) {
-                    close(client_fd);
-                    return 0;
-                } else if(n == -1) {
-                    perror("read error");
-                    exit(1);
-                }  else {
-                    for(i = 0; i < n; i++) {
-                        buffer[i] = toupper(buffer[i]);
-                    }
-                    write(client_fd, buffer, n);
-                }
-
-            }
-        } else {
-            close(client_fd);
-            signal(SIGCHLD, child_process_exit);
-        }
+        error = pthread_create(&tid, NULL, swoole_callback, (void *) &ts[i]);
+        catchError(error);
+        pthread_detach(tid);
+        i++;
     }
 }
 
