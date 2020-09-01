@@ -7,7 +7,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-#define SERV_PORT 888
+#define SERV_PORT 8888
 #define MAXLINE 1024
 
 void child_process_exit(int signo) {
@@ -32,6 +32,7 @@ void * swoole_callback(void *arg) {
 
     char buf[MAXLINE];
     char str[INET_ADDRSTRLEN];
+    char *message;
 
     while (1) {
         buf[0] = 0;
@@ -41,7 +42,7 @@ void * swoole_callback(void *arg) {
             break;
         }
         write(ts->client_fd, buf, n);
-        write(STDOUT_FILENO, buf, sizeof(buf));
+        printf("当前客户端%d发来消息:%s", ts->client_fd, buf);
     }
 
     return (void *)0;
@@ -73,9 +74,13 @@ int main (void) {
 
     struct s_info ts[256];
 
+    socklen_t opt = 1;
+
     pthread_t tid;
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(SERV_PORT);
