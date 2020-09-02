@@ -6,113 +6,114 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/select.h>
+#include <sys/epoll.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <stdbool.h>
 
 #define SERV_PORT 8888
 #define MAXLINE 1024
+#define FD_SIZE 10
 
-void child_process_exit(int signo) {
-    while (waitpid(0, NULL, WNOHANG) > 0) {
-        return;
-    }
-}
 
-void catchError(int error) {
+void handleError(int error) {
     if (error != 0) {
-        perror("error:");
+        perror("error :");
+        exit(-1);
     }
 }
-struct s_info {
-    struct sockaddr_in client_addr;
-    int client_fd;
-};
 
-void * swoole_callback(void *arg) {
-    int n, i;
-    struct s_info *ts = (struct s_info *)arg;
+int main() {
 
-    char buf[MAXLINE];
-    char str[INET_ADDRSTRLEN];
-    char *message;
-
-    while (1) {
-        buf[0] = 0;
-        n = read(ts->client_fd,buf,MAXLINE);
-        if (n == 0) {
-            printf("client %d is closed\n", ts->client_fd);
-            break;
-        }
-        write(ts->client_fd, buf, n);
-        printf("当前客户端%d发来消息:%s", ts->client_fd, buf);
-    }
-
-    return (void *)0;
-}
-
-
-
-
-
-int main (void) {
-
-    struct s_info *s;
-
+    // 保存server_fd
     int server_fd, client_fd;
+    // 保存错误
+    int error;
+    // 保存网络地址
+    struct sockaddr_in server_addr, client_addr;
+    // 保存配置项
+    int optval = 1;
+    // epoll fd
+    int epfd;
+    //
+    struct epoll_event ev, ep[FD_SIZE];
 
-    int error = 0;
+    char str[1024];
 
-    int n = 0;
+    socklen_t client_addr_len;
 
-    int i = 0;
+    int socketFd;
 
-    int pid;
+    int i;
+
+    int n;
 
     char buffer[BUFSIZ];
 
-    char client_ip[BUFSIZ];
-
-    struct sockaddr_in serv_addr, client_addr;
-
-    struct s_info ts[256];
-
-    socklen_t opt = 1;
-
-    pthread_t tid;
-
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(SERV_PORT);
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    error = bind(server_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-    catchError(error);
-
-    error = listen(server_fd, 256);
-    catchError(error);
-
-    while(1) {
-
-        socklen_t client_socket_len = sizeof(client_addr);
-        client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &client_socket_len);
-        printf("当前客户端IP:%s, 客户端端口号:%d\n",
-               inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)),
-               ntohs(client_addr.sin_port));
-
-        if (client_fd < 0) {
-            perror("socket Error");
-        }
-
-        ts[i].client_fd = client_fd;
-        ts[i].client_addr = client_addr;
-
-        error = pthread_create(&tid, NULL, swoole_callback, (void *) &ts[i]);
-        catchError(error);
-        pthread_detach(tid);
-        i++;
+    if (server_fd < 0) {
+        printf("socket create error!\n");
     }
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SERV_PORT);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    error = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    bind(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr));
+    handleError(error);
+    error = listen(server_fd, 400);
+    handleError(error);
+
+    epfd = epoll_create(FD_SIZE);
+
+
+    ev.events = EPOLLIN;
+    ev.data.fd = server_fd;
+
+    error = epoll_ctl(epfd, EPOLL_CTL_ADD, server_fd, &ev);
+    handleError(error);
+
+
+    while (true) {
+        int nReady = epoll_wait(epfd, ep, FD_SIZE, -1);
+
+        printf("%d\n", nReady);
+
+        for (i = 0; i < nReady; i++) {
+            printf("ep[%d].data.fd=%d,ep[%d].events=%d\n", i, ep[i].data.fd, i, ep[i].events);
+            if (!(ep[i].events & EPOLLIN)) {
+                continue;
+            }
+            if (ep[i].data.fd == server_fd) {
+                client_addr_len = sizeof(client_addr);
+                client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &client_addr_len);
+                printf("当前客户端:%s:%d连接:\n", inet_ntop(AF_INET, &client_addr.sin_addr, str, sizeof(str)),
+                       ntohs(client_addr.sin_port));
+                ev.events = EPOLLIN;
+                ev.data.fd = client_fd;
+                epoll_ctl(epfd, EPOLL_CTL_ADD, client_fd, &ev);
+                break;
+            } else {
+                socketFd = ep[i].data.fd;
+                n = read(socketFd, buffer, sizeof(buffer));
+                if (n == 0) {
+                    printf("当前客户端断开了连接\n");
+                    close(client_fd);
+                } else if (n < 0) {
+
+                } else {
+                    write(STDOUT_FILENO, buffer, n);
+                }
+
+            }
+        }
+//
+    }
+
+
 }
-
-
 
