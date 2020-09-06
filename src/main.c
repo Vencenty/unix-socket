@@ -49,6 +49,7 @@ int main() {
 
     int i;
 
+
     int n;
 
     char buffer[BUFSIZ];
@@ -61,7 +62,7 @@ int main() {
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERV_PORT);
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_addr.s_addr = inet_addr("0.0.0.0");
     error = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     bind(server_fd, (struct sockaddr *) &server_addr, sizeof(server_addr));
     handleError(error);
@@ -81,10 +82,7 @@ int main() {
     while (true) {
         int nReady = epoll_wait(epfd, ep, FD_SIZE, -1);
 
-        printf("%d\n", nReady);
-
         for (i = 0; i < nReady; i++) {
-            printf("ep[%d].data.fd=%d,ep[%d].events=%d\n", i, ep[i].data.fd, i, ep[i].events);
             if (!(ep[i].events & EPOLLIN)) {
                 continue;
             }
@@ -107,6 +105,13 @@ int main() {
 
                 } else {
                     write(STDOUT_FILENO, buffer, n);
+                    char *response = (char *)malloc(BUFSIZ);
+//                    sprintf(response, "%s%s","服务端发来消息:\n", buffer);
+                    char header[] = "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n";
+                    char html[] = "<!DOCTYPE html><html><head></head><body><h1>这他妈是老严</h1></body></html>";
+                    send(socketFd, header, strlen(header), 0);
+                    send(socketFd, html,strlen(html), 0);
+                    close(socketFd);
                 }
 
             }
